@@ -1,0 +1,11 @@
+## Interface: 90207
+## Title: |cFFFFFFFFGot Loot|r|cFF00FF00 v1 (Retail)|r
+## Author: Arcadea
+## Notes: A loot helper addon
+## Version: 1
+## RequiredDeps:
+## OptionalDeps: 
+## SavedVariables: 
+## SavedVariablesPerCharacter: LootOptions
+
+GotLoot.lua
