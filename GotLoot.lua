@@ -24,6 +24,7 @@ local types = {}
 	types.Food			= "Food & Drink"
 	types.Potions		= "Potion"
 	types.Scroll		= "Other"
+	types.Junk			= "Junk"
 
 -- Used for picking up potions and food (Player Level - levelOffset)
 local levelOffset		= 15
@@ -111,6 +112,9 @@ function UpdateUI()
 	end
 	-- Update Junk Value Slider
 	mainOptions.value:SetValue(LootOptions.MinJunkValue/100)
+
+	mainOptions.junk:SetChecked(LootOptions.AlwaysLootJunk)
+	mainOptions.bypass:SetChecked(LootOptions.Bypass)
 
 	mainOptions.ore:SetChecked(LootOptions.LootOre)
 	mainOptions.meat:SetChecked(LootOptions.LootMeat)
@@ -271,12 +275,12 @@ local GotLootOptions_titleBG = GotLootOptions:CreateTexture(nil,"ARTWORK");
 GotLootOptions_titleBG:SetTexture("Interface/DialogFrame/UI-DialogBox-Header");
 GotLootOptions_titleBG:SetWidth(280);
 GotLootOptions_titleBG:SetHeight(64);
-GotLootOptions_titleBG:SetPoint("TOP", GotLootOptions, 0, 12);
+GotLootOptions_titleBG:SetPoint("TOP", GotLootOptions, 0, 20);
 GotLootOptions.texture = GotLootOptions_titleBG;
 
 local GotLootOptions_titleText = GotLootOptions:CreateFontString(nil, "ARTWORK", "GameFontNormal");
 GotLootOptions_titleText:SetText("Got Loot");
-GotLootOptions_titleText:SetPoint("TOP", GotLootOptions, 0, -3);
+GotLootOptions_titleText:SetPoint("TOP", GotLootOptions, 0, 5);
 
 local CloseButton = CreateFrame("Button","CloseButton", GotLootOptions, "UIPanelCloseButton")
 CloseButton:SetPoint("TOPRIGHT", GotLootOptions, "TOPRIGHT", 0, 0);
@@ -315,7 +319,7 @@ mainOptions:SetHeight(505)
 mainOptions:SetPoint("CENTER", GotLootOptions, "CENTER", 0, -30);
 
 mainOptions.title = mainOptions:CreateFontString(mainOptions, "ARTWORK", "GameFontNormal");
-mainOptions.title:SetText('Main Options Goes Here');
+mainOptions.title:SetText('Main Options');
 mainOptions.title:SetPoint("TOP", mainOptions, 10, -10);
 
 mainOptions.sessionvalue = mainOptions:CreateFontString(mainOptions, "ARTWORK", "GameFontNormal");
@@ -338,6 +342,8 @@ mainOptions.scrollstitle:SetPoint("TOP", mainOptions, 10, -360);
 
 -- ITEMS
 mainOptions.debug 	= CreateToggleButton("debug", "Debug mode", mainOptions, 10, -20)
+mainOptions.junk 	= CreateToggleButton("junk", "Always Loot Junk (useful for fishing)", mainOptions, 400, -20)
+mainOptions.bypass 	= CreateToggleButton("bypass", "Bypass filter and loot everthing", mainOptions, 400, -40)
 mainOptions.info 	= CreateToggleButton("info", "Show info on items not looted", mainOptions, 10, -40)
 mainOptions.value 	= CreateSlider("value", "Junk Value (Silver) : ", mainOptions, 80, -80, 1, 100)
 
@@ -380,6 +386,23 @@ mainOptions.info:SetScript("OnClick", function()
 		DEFAULT_CHAT_FRAME:AddMessage("|" .. Colors.Red .. "Got Loot?|r Info mode off!");
 	end
 end)
+
+mainOptions.junk:SetScript("OnClick", function(self,value)
+	if mainOptions.junk:GetChecked() then
+		LootOptions.AlwaysLootJunk = true;
+	else
+		LootOptions.AlwaysLootJunk = false;
+	end
+end)
+
+mainOptions.bypass:SetScript("OnClick", function(self,value)
+	if mainOptions.bypass:GetChecked() then
+		LootOptions.Bypass = true;
+	else
+		LootOptions.Bypass = false;
+	end
+end)
+
 
 mainOptions.value:SetScript("OnValueChanged", function(self,value)
 	mainOptions.value.title:SetText("Junk Value: " .. math.floor(value) .. " Silver")
@@ -987,6 +1010,12 @@ SlashCmdList["GOTLOOT"] = function(msg)
 		if LootOptions.LootJunk == nil then 
 			LootOptions.LootJunk = true;
 		end
+		if LootOptions.AlwaysLootJunk == nil then 
+			LootOptions.AlwaysLootJunk = false;
+		end
+		if LootOptions.Bypass == nil then 
+			LootOptions.Bypass = false;
+		end
 		if LootOptions.FilterJunk == nil then 
 			LootOptions.FilterJunk = true;
 		end
@@ -1003,7 +1032,7 @@ SlashCmdList["GOTLOOT"] = function(msg)
 			LootOptions.LootFood = false;
 		end
 		if LootOptions.FoodLevelOffset == nil then 
-			LootOptions.FoodLevelOffset = 20;
+			LootOptions.FoodLevelOffset = 5;
 		end
 		if LootOptions.TradeGoods == nil then 
 			LootOptions.TradeGoods = true;
@@ -1190,12 +1219,19 @@ SlashCmdList["GOTLOOT"] = function(msg)
 				end
 			end
 
-			-- Removed to give more granular options
-			--LOOT TRADE GOODS ITEMS
-			--if LootOptions.TradeGoods == true and itemType == "Tradeskill" and looted == false then
-			--	LootSlot(CurrentLootItem);
-			--	looted=true;
-			--end
+			-- BYPASS
+			if LootOptions.Bypass == true and looted == false then
+				LootItem(CurrentLootItem);
+				looted=true;
+			end
+
+
+			-- ALWAYS LOOT JUNK
+			if LootOptions.AlwaysLootJunk == true and itemSubType == types.Junk and looted == false then
+				LootItem(CurrentLootItem);
+				looted=true;
+			end
+		
 		
 			--LOOT FOOD ITEMS
 			if LootOptions.LootFood == true and itemSubType == types.Food and looted == false then
